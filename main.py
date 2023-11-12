@@ -1,5 +1,5 @@
-import random
 import requests
+import random
 
 """
 run HTTP server (socket)
@@ -23,17 +23,11 @@ def coordinate_generator():
     return {'x': random.randint(*COORD_RANGE), 'y': random.randint(*COORD_RANGE)}
 
 
-class Client:
-    def __init__(self, name):
-        self.name = name
-
-    def send_point(self, endpoint: str | bytes) -> None:
-        post_coord = coordinate_generator()
-        requests.post(headers={'name': self.name}, url=endpoint, data=post_coord)
+def send_point(endpoint: str | bytes) -> None:
+    post_coord = coordinate_generator()
+    print(requests.post(url=endpoint, data=post_coord))
 
 
 if __name__ == '__main__':
-    client = Client('Justas')
-    client.send_point('http://localhost:7789')
-    client2 = Client('Justas2')
-    client2.send_point('http://localhost:7789')
+    send_point('http://localhost:7789')
+    send_point('http://localhost:7789')
