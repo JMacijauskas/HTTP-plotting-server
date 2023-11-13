@@ -1,3 +1,5 @@
+from time import sleep
+
 import requests
 import random
 
@@ -23,11 +25,13 @@ def coordinate_generator():
     return {'x': random.randint(*COORD_RANGE), 'y': random.randint(*COORD_RANGE)}
 
 
-def send_point(endpoint: str | bytes) -> None:
-    post_coord = coordinate_generator()
-    print(requests.post(url=endpoint, data=post_coord))
+def send_point(session, endpoint: str | bytes) -> None:
+    print(post_coord := coordinate_generator())
+    print(session.post(url=endpoint, data=post_coord))
 
 
 if __name__ == '__main__':
+    single_connection = requests.Session()
     for i in range(50):
-        send_point('http://localhost:7789')
+        sleep(0.5)
+        send_point(single_connection, 'http://localhost:7789')

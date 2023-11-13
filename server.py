@@ -9,6 +9,8 @@ SOCKET_PORT = 7789
 PROTOCOL = b'HTTP/1.1'
 RESPONSE_OK = b'200 OK'
 RESPONSE_BAD = b'400 BAD DATA'
+RESPONSE_CONTINUE = b'100-continue'
+KEEP_ALIVE = b'Connection: keep-alive'
 
 
 class SimpleServer:
@@ -22,14 +24,18 @@ class SimpleServer:
         while True:
             # accept connections from outside
             (client_socket, address) = self.socket.accept()
-            print(raw_response := client_socket.recv(4096))
+            self.handle_client(client_socket)
+            # client_socket.close()
+
+    def handle_client(self, client_sock):
+        while True:
+            print(raw_response := client_sock.recv(4096))
             response = parse_response(raw_response)
             if response['x'] is not None and response['y'] is not None:
-                client_socket.send(PROTOCOL + b' ' + RESPONSE_OK)
+                client_sock.send(b' '.join((PROTOCOL, KEEP_ALIVE, RESPONSE_CONTINUE)))
                 self.graph.display_point(int(response['x']), int(response['y']))
             else:
-                client_socket.send(PROTOCOL + b' ' + RESPONSE_BAD)
-            client_socket.close()
+                client_sock.send(b' '.join((PROTOCOL, KEEP_ALIVE, RESPONSE_BAD)))
 
 
 def parse_response(raw_data: bytes) -> dict[str, Optional[str]]:

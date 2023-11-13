@@ -24,5 +24,5 @@ class Plotter:
 if __name__ == '__main__':
     plat = Plotter()
     for x in range(50):
-        oint = coordinate_generator()
-        plat.display_point(oint['x'], oint['y'])
+        point = coordinate_generator()
+        plat.display_point(point['x'], point['y'])
