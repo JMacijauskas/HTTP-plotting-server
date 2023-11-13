@@ -29,5 +29,5 @@ def send_point(endpoint: str | bytes) -> None:
 
 
 if __name__ == '__main__':
-    send_point('http://localhost:7789')
-    send_point('http://localhost:7789')
+    for i in range(50):
+        send_point('http://localhost:7789')

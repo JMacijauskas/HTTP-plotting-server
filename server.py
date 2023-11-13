@@ -22,14 +22,13 @@ class SimpleServer:
         while True:
             # accept connections from outside
             (client_socket, address) = self.socket.accept()
-            while True:
-                print(raw_response := client_socket.recv(4096))
-                response = parse_response(raw_response)
-                if response['x'] is not None and response['y'] is not None:
-                    client_socket.send(PROTOCOL + b' ' + RESPONSE_OK)
-                    self.graph.display_point(int(response['x']), int(response['y']))
-                else:
-                    client_socket.send(PROTOCOL + b' ' + RESPONSE_BAD)
+            print(raw_response := client_socket.recv(4096))
+            response = parse_response(raw_response)
+            if response['x'] is not None and response['y'] is not None:
+                client_socket.send(PROTOCOL + b' ' + RESPONSE_OK)
+                self.graph.display_point(int(response['x']), int(response['y']))
+            else:
+                client_socket.send(PROTOCOL + b' ' + RESPONSE_BAD)
             client_socket.close()
 
 
