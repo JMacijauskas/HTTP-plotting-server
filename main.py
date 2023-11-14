@@ -15,7 +15,7 @@ constantly update display for users?
 """
 
 """
-User POST coordinate -> server -> Queue -> parse coordinate -> add to plot -> display in main view
+User POST coordinate -> multi thread server -> Queue -> parse coordinate -> add to plot -> display in main view
 """
 
 COORD_RANGE = (-100, 100)
@@ -24,7 +24,9 @@ COORD_RANGE = (-100, 100)
 def coordinate_generator():
     return {'x': random.randint(*COORD_RANGE), 'y': random.randint(*COORD_RANGE)}
 
-
+# Client class -> param generator (coordinates)
+# Generator as func (yield) and class (dunders)
+# decide plotting graph type and plot type on init (x:timestamp, y:data)
 def send_point(session, endpoint: str | bytes) -> None:
     print(post_coord := coordinate_generator())
     print(session.post(url=endpoint, data=post_coord))

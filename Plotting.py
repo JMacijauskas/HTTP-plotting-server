@@ -3,6 +3,8 @@ import numpy as np
 
 from main import coordinate_generator
 
+# Plot multiple clients on same graph
+
 
 class Plotter:
     def __init__(self):
