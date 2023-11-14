@@ -8,7 +8,9 @@ SOCKET_PORT = 7789
 
 PROTOCOL = b'HTTP/1.1'
 RESPONSE_OK = b'200 OK'
+OK_HEAD = b' '.join((PROTOCOL, RESPONSE_OK))
 RESPONSE_BAD = b'400 BAD DATA'
+BAD_HEAD = b' '.join((PROTOCOL, RESPONSE_BAD))
 RESPONSE_CONTINUE = b'100-continue'
 KEEP_ALIVE = b'Connection: keep-alive'
 
@@ -30,12 +32,17 @@ class SimpleServer:
     def handle_client(self, client_sock):
         while True:
             print(raw_response := client_sock.recv(4096))
+            if not raw_response:
+                break
             response = parse_response(raw_response)
             if response['x'] is not None and response['y'] is not None:
-                client_sock.send(b' '.join((PROTOCOL, KEEP_ALIVE, RESPONSE_CONTINUE)))
+                print(resp_message := b'\r\n'.join((OK_HEAD, b'Transfer-Encoding: chunked', b'', b'2', b'OK', b'0', b'\r\n')))
+                client_sock.sendall(resp_message)
                 self.graph.display_point(int(response['x']), int(response['y']))
             else:
-                client_sock.send(b' '.join((PROTOCOL, KEEP_ALIVE, RESPONSE_BAD)))
+                print(resp_message := b'\r\n'.join(
+                    (BAD_HEAD, b'Transfer-Encoding: chunked', b'', b'3', b'BAD', b'0', b'\r\n')))
+                client_sock.sendall(resp_message)
 
 
 def parse_response(raw_data: bytes) -> dict[str, Optional[str]]:
