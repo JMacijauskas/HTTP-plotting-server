@@ -1,7 +1,9 @@
+from typing import Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-from main import coordinate_generator
+from Generators import random_coordinate_generator
 
 # Plot multiple clients on same graph
 
@@ -15,7 +17,7 @@ class Plotter:
         self.ax = self.fig.add_subplot()
         # self.ax.plot(self.x_points, self.y_points)
 
-    def display_point(self, x_: int, y_: int):
+    def display_point(self, x_: float, y_: float, graph_type: Optional[str]):
         self.x_points = np.append(self.x_points, [x_])
         self.y_points = np.append(self.y_points, [y_])
         self.ax.plot(self.x_points, self.y_points)
@@ -25,6 +27,5 @@ class Plotter:
 
 if __name__ == '__main__':
     plat = Plotter()
-    for x in range(50):
-        point = coordinate_generator()
+    for point in random_coordinate_generator(50):
         plat.display_point(point['x'], point['y'])

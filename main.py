@@ -1,7 +1,8 @@
 from time import sleep
 
 import requests
-import random
+
+from Generators import random_coordinate_generator, function_point_generator
 
 """
 run HTTP server (socket)
@@ -18,22 +19,24 @@ constantly update display for users?
 User POST coordinate -> multi thread server -> Queue -> parse coordinate -> add to plot -> display in main view
 """
 
-COORD_RANGE = (-100, 100)
-
-
-def coordinate_generator():
-    return {'x': random.randint(*COORD_RANGE), 'y': random.randint(*COORD_RANGE)}
-
 # Client class -> param generator (coordinates)
 # Generator as func (yield) and class (dunders)
 # decide plotting graph type and plot type on init (x:timestamp, y:data)
-def send_point(session, endpoint: str | bytes) -> None:
-    print(post_coord := coordinate_generator())
-    print(session.post(url=endpoint, data=post_coord))
+
+
+class Client:
+    def __init__(self, target_url: str, data_generator):
+        self.generator = data_generator
+        self.url = target_url
+        self.single_connection = requests.Session()
+
+    def send_point(self) -> None:
+        print(post_coord := self.generator.__next__())
+        print(self.single_connection.post(url=self.url, data=post_coord))
 
 
 if __name__ == '__main__':
-    single_connection = requests.Session()
+    client = Client('http://localhost:7789', function_point_generator(50, lambda x: x ** 2 + x / 2))
     for i in range(50):
         sleep(0.5)
-        send_point(single_connection, 'http://localhost:7789')
+        client.send_point()
