@@ -1,5 +1,5 @@
 import socket
-import time
+import dataclasses
 from typing import Optional
 
 from Plotting import Plotter
@@ -13,6 +13,12 @@ OK_HEAD = b' '.join((PROTOCOL, b'200 OK'))
 OK_MESSAGE = b'\r\n'.join((OK_HEAD, TRANSFER_ENCODING, b'', b'2', b'OK', b'0', b'\r\n'))
 BAD_HEAD = b' '.join((PROTOCOL, b'400 BAD DATA'))
 BAD_MESSAGE = b'\r\n'.join((BAD_HEAD, TRANSFER_ENCODING, b'', b'3', b'BAD', b'0', b'\r\n'))
+
+
+@dataclasses.dataclass()
+class Point:
+    x: int
+    y: int
 
 
 class SimpleServer:
@@ -31,44 +37,59 @@ class SimpleServer:
     def handle_client(self, client_sock):
         while True:
             try:
-                print(raw_response := self._listenForFullRequest(client_sock, 5))
+                print(resquest_data := self._listen_for_full_request(client_sock))
             except ConnectionResetError:
                 break
-            if not raw_response:
-                break
-            response = parse_response(raw_response)
-            if response['x'] is not None and response['y'] is not None:
+
+            point = parse_data(resquest_data)
+            if point:
                 client_sock.sendall(OK_MESSAGE)
-                self.graph.display_point(int(response['x']), int(response['y']))
+                self.graph.display_point(point.x, point.y)
             else:
                 client_sock.sendall(BAD_MESSAGE)
 
     @staticmethod
-    def _listenForFullRequest(client_sock, timeout: int) -> bytes:
-        end_time = time.time() + timeout
-        raw_response = b''
-        while time.time() < end_time:
-            if not raw_response.endswith(b'\r\n\r\n'):
-                raw_response += client_sock.recv(4096)  # recv, for content length of bytes
-
-            else:
-                break
-        return raw_response
+    def _listen_for_full_request(client_sock) -> bytes:
+        raw_response = client_sock.recv(4096)  # recv, for content length of bytes
+        if not raw_response:
+            raise ConnectionResetError
+        body, missing_bytes = parse_response(raw_response)
+        if missing_bytes:
+            body += client_sock.recv(missing_bytes)
+        return body
 
 
-def parse_response(raw_data: bytes) -> dict[str, Optional[str]]:
-    for line in raw_data.decode('ASCII').splitlines():
-        if 'x=' in line and 'y=' in line:
-            x_str, y_str, *_ = line.split('&')
-            _, x = x_str.split('=')
-            _, y = y_str.split('=')
-            resp_dict['x'] = x
-            resp_dict['y'] = y
+def parse_response(raw_data: bytes) -> tuple[bytes, int]:
+    lagging_bytes = 0
+    headers, data, *excess = raw_data.split(b'\r\n\r\n')
+
+    headers_dict = parse_headers(headers)
+
+    if 'Content-Length' in headers_dict:
+        data_length = int(headers_dict['Content-Length'])
+    else:
+        data_length = 0
+    if len(data) != data_length:
+        lagging_bytes = data_length
+    return data, lagging_bytes
 
 
-def parse_data(data: bytes):
-    resp_dict = {'x': None, 'y': None}
-    return resp_dict
+def parse_data(raw_body: bytes) -> Optional[Point]:
+    body = raw_body.decode('ASCII')
+    if 'x=' in body and 'y=' in body:
+        x_str, y_str, *_ = body.split('&')
+        _, x = x_str.split('=')
+        _, y = y_str.split('=')
+        return Point(int(x.strip()), int(y.strip()))
+
+
+def parse_headers(headers: bytes) -> dict[str, str]:
+    headers_dict = {}
+    for line in headers.decode('ASCII').splitlines():
+        if ':' in line:
+            header_name, value = line.split(':', 1)
+            headers_dict[header_name] = value.strip()
+    return headers_dict
 
 
 if __name__ == '__main__':
