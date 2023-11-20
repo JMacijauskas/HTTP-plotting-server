@@ -1,14 +1,20 @@
 import random
-from typing import Callable
+from typing import Callable, Iterator
+from matplotlib.colors import BASE_COLORS
 
 COORD_RANGE = (-1000, 1000)
 
 
-def random_coordinate_generator(num: int) -> dict[str, float]:
+def random_coordinate_generator(num: int) -> Iterator[dict[str, float]]:
     for i in range(num):
         yield {'x': random.randint(*COORD_RANGE) / 10, 'y': random.randint(*COORD_RANGE) / 10}
 
 
-def function_point_generator(num: int, func: Callable) -> dict[str, float]:
+def function_point_generator(num: int, func: Callable) -> Iterator[dict[str, float]]:
     for i in range(num):
         yield {'x': i, 'y': func(i)}
+
+
+def color_generator():
+    while True:
+        yield from BASE_COLORS.keys()

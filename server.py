@@ -2,7 +2,9 @@ import socket
 import dataclasses
 from typing import Optional
 
+from Generators import color_generator
 from Plotting import Plotter
+from ProjectEnums import GraphPlot
 
 SOCKET_ADDRESS = 'localhost'
 SOCKET_PORT = 7789
@@ -27,16 +29,16 @@ class SimpleServer:
         self.socket.bind((SOCKET_ADDRESS, SOCKET_PORT))
         self.socket.listen(5)
         self.graph = Plotter()
+        self.color_generator = color_generator()
 
-    def run(self):
-        while True:
+    def run(self) -> None:
+        for color in self.color_generator:  # works as while loop, due to endless generator
             # accept connections from outside
             (client_socket, address) = self.socket.accept()
-            print(f'Client name: {address}')
-            self.handle_client(client_socket)
+            print(f'Client ID: {address}, color: {color}')
+            self.handle_client(client_socket, color)
 
-    def handle_client(self, client_sock):
-        graph_type = None
+    def handle_client(self, client_sock, client_color: str) -> None:
         while True:
             try:
                 resquest_data, plot = self._listen_for_full_request(client_sock)
@@ -46,12 +48,12 @@ class SimpleServer:
             point = parse_data(resquest_data)
             if point:
                 client_sock.sendall(OK_MESSAGE)
-                self.graph.display_point(point.x, point.y, graph_type)
+                self.graph.display_point(point.x, point.y, graph_type=plot, graph_color=client_color)
             else:
                 client_sock.sendall(BAD_MESSAGE)
 
     @staticmethod
-    def _listen_for_full_request(client_sock) -> tuple[bytes, str]:
+    def _listen_for_full_request(client_sock) -> tuple[bytes, Optional[GraphPlot]]:
         raw_response = client_sock.recv(4096)  # recv, for content length of bytes
         if not raw_response:
             raise ConnectionResetError
@@ -61,16 +63,21 @@ class SimpleServer:
         return body, plot_type
 
 
-def parse_response(raw_data: bytes) -> tuple[bytes, int, Optional[str]]:
+def parse_response(raw_data: bytes) -> tuple[bytes, int, Optional[GraphPlot]]:
     lagging_bytes = 0
     headers, data, *excess = raw_data.split(b'\r\n\r\n')
 
     headers_dict = parse_headers(headers)
 
     if 'Graph-Type' in headers_dict:
-        plot_type = headers_dict['Graph-Type']
+        try:
+            plot_type = GraphPlot[headers_dict['Graph-Type']]
+        except KeyError:
+            print(f"Unsupported graph type: {headers_dict['Graph-Type']}. Regular plot will be used")
+            plot_type = None
     else:
         plot_type = None
+
     if 'Content-Length' in headers_dict:
         data_length = int(headers_dict['Content-Length'])
     else:
