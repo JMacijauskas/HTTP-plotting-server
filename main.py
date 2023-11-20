@@ -7,13 +7,12 @@ from ProjectEnums import GraphPlot
 
 """
 run HTTP server (socket)
-each user sends point to extend graph
+each user sends point to extend their graph
 use matplotlib for displaying data
-have queue for multiple clients to display data one after other
-display time duration, if queue exists?
+have queue for multiple clients to display data one after other (possibly capture more than one current point addition per refresh tick)
 display in tkinter? or web
-identifier?
-constantly update display for users?
+limit request format per graph and user
+constantly update display for users
 """
 
 """
