@@ -10,8 +10,8 @@ def random_coordinate_generator(num: int) -> Iterator[dict[str, float]]:
         yield {'x': random.randint(*COORD_RANGE) / 10, 'y': random.randint(*COORD_RANGE) / 10}
 
 
-def function_point_generator(num: int, func: Callable) -> Iterator[dict[str, float]]:
-    for i in range(num):
+def function_point_generator(range_interval: tuple[int, int], func: Callable) -> Iterator[dict[str, float]]:
+    for i in range(*range_interval):
         yield {'x': i, 'y': func(i)}
 
 

@@ -17,7 +17,7 @@ BAD_HEAD = b' '.join((PROTOCOL, b'400 BAD DATA'))
 BAD_MESSAGE = b'\r\n'.join((BAD_HEAD, TRANSFER_ENCODING, b'', b'3', b'BAD', b'0', b'\r\n'))
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass()  # use named tuple
 class Point:
     x: float
     y: float
@@ -36,9 +36,9 @@ class SimpleServer:
             # accept connections from outside
             (client_socket, address) = self.socket.accept()
             print(f'Client ID: {address}, color: {color}')
-            self.handle_client(client_socket, color)
+            self.handle_client(client_socket, address[1], color)
 
-    def handle_client(self, client_sock, client_color: str) -> None:
+    def handle_client(self, client_sock, client_address: int, client_color: str) -> None:
         while True:
             try:
                 resquest_data, plot = self._listen_for_full_request(client_sock)
@@ -48,7 +48,7 @@ class SimpleServer:
             point = parse_data(resquest_data)
             if point:
                 client_sock.sendall(OK_MESSAGE)
-                self.graph.display_point(point.x, point.y, graph_type=plot, graph_color=client_color)
+                self.graph.display_point(point.x, point.y, graph_id=client_address, graph_type=plot, graph_color=client_color)
             else:
                 client_sock.sendall(BAD_MESSAGE)
 
@@ -69,7 +69,7 @@ def parse_response(raw_data: bytes) -> tuple[bytes, int, Optional[GraphPlot]]:
 
     headers_dict = parse_headers(headers)
 
-    if 'Graph-Type' in headers_dict:
+    if 'Graph-Type' in headers_dict:  # use get
         try:
             plot_type = GraphPlot[headers_dict['Graph-Type']]
         except KeyError:
