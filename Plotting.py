@@ -6,8 +6,6 @@ import numpy as np
 from ProjectEnums import GraphPlot
 from Generators import random_coordinate_generator
 
-# Plot multiple clients on same graph
-
 
 class Plotter:
     def __init__(self):
@@ -17,23 +15,20 @@ class Plotter:
         self.ax = self.fig.add_subplot()
 
     def display_point(self, x_: float, y_: float, graph_id: int, graph_type: Optional[GraphPlot], graph_color: str):
-        if graph_id not in self.axes:  # use get
-            x = np.array([x_])
-            y = np.array([y_])
-            self.axes[graph_id] = {'x': x, 'y': y, 'color': graph_color, 'type': graph_type}
+        graph_axes = self.axes.get(graph_id)
+        if graph_axes:
+            graph_axes['x'] = np.append(graph_axes['x'], [x_])
+            graph_axes['y'] = np.append(graph_axes['y'], [y_])
         else:
-            x = np.append(self.axes[graph_id]['x'], [x_])
-            y = np.append(self.axes[graph_id]['y'], [y_])
-            self.axes[graph_id]['x'] = x
-            self.axes[graph_id]['y'] = y
+            self.axes[graph_id] = {'x': np.array([x_]), 'y': np.array([y_]), 'color': graph_color, 'type': graph_type}
 
-        self.add_plots()
+        self.add_existing_plots()
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def add_plots(self):
-        for _, plot in self.axes.items():
+    def add_existing_plots(self):
+        for plot in self.axes.values():
             graph_type = plot['type']
             graph_color = plot['color']
             x = plot['x']
@@ -56,4 +51,4 @@ class Plotter:
 if __name__ == '__main__':
     plat = Plotter()
     for point in random_coordinate_generator(50):
-        plat.display_point(point['x'], point['y'], GraphPlot.scatter, 'y')
+        plat.display_point(point['x'], point['y'], 999, GraphPlot.scatter, 'y')

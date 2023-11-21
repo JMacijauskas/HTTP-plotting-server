@@ -25,18 +25,18 @@ User POST coordinate -> multi thread server -> Queue -> parse coordinate -> add 
 
 
 class Client:
-    def __init__(self, target_url: str, data_generator):
+    def __init__(self, target_url: str, plot_type: GraphPlot, data_generator, generator_params: tuple):
         self.generator = data_generator
         self.url = target_url
         self.single_connection = requests.Session()
+        self.generator_params = generator_params
+        self.plot_type = plot_type
 
-    def send_point(self, plot_type: GraphPlot) -> None:
-        print(post_coord := self.generator.__next__())
-        print(self.single_connection.post(url=self.url, headers={'Graph-Type': plot_type.value}, data=post_coord))
+    def send_points(self, ) -> None:
+        for coordinate in self.generator(*self.generator_params):
+            print(self.single_connection.post(url=self.url, headers={'Graph-Type': self.plot_type.value}, data=coordinate))
 
 
 if __name__ == '__main__':
-    client = Client('http://localhost:7789', function_point_generator((-50, 50), lambda x: x ** 3 - x ** 2))
-    for i in range(100):
-        sleep(0.5)
-        client.send_point(GraphPlot.stairs)
+    client = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-50, 50), lambda x: x ** 3 - x ** 2))
+    client.send_points()

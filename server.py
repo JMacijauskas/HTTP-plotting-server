@@ -1,7 +1,6 @@
 import socket
-import dataclasses
 from typing import Optional
-
+from collections import namedtuple
 from Generators import color_generator
 from Plotting import Plotter
 from ProjectEnums import GraphPlot
@@ -17,10 +16,7 @@ BAD_HEAD = b' '.join((PROTOCOL, b'400 BAD DATA'))
 BAD_MESSAGE = b'\r\n'.join((BAD_HEAD, TRANSFER_ENCODING, b'', b'3', b'BAD', b'0', b'\r\n'))
 
 
-@dataclasses.dataclass()  # use named tuple
-class Point:
-    x: float
-    y: float
+Point = namedtuple("Point", "x y")
 
 
 class SimpleServer:
@@ -69,19 +65,14 @@ def parse_response(raw_data: bytes) -> tuple[bytes, int, Optional[GraphPlot]]:
 
     headers_dict = parse_headers(headers)
 
-    if 'Graph-Type' in headers_dict:  # use get
-        try:
-            plot_type = GraphPlot[headers_dict['Graph-Type']]
-        except KeyError:
-            print(f"Unsupported graph type: {headers_dict['Graph-Type']}. Regular plot will be used")
-            plot_type = None
-    else:
-        plot_type = None
+    plot_type = headers_dict.get('Graph-Type')
+    if plot_type:
+        plot_type = GraphPlot[plot_type]
 
-    if 'Content-Length' in headers_dict:
-        data_length = int(headers_dict['Content-Length'])
-    else:
-        data_length = 0
+    data_length = headers_dict.get('Content-Length', 0)
+    if data_length:
+        data_length = int(data_length)
+
     if len(data) != data_length:
         lagging_bytes = data_length
     return data, lagging_bytes, plot_type
