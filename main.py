@@ -1,8 +1,5 @@
-from time import sleep
-
 import requests
-
-from Generators import random_coordinate_generator, function_point_generator
+from Generators import function_point_generator
 from ProjectEnums import GraphPlot
 
 """
@@ -38,5 +35,5 @@ class Client:
 
 
 if __name__ == '__main__':
-    client = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-50, 50), lambda x: x ** 3 - x ** 2))
+    client = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-55, 55), lambda x: x + 100000))
     client.send_points()

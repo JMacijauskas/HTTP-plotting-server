@@ -2,8 +2,10 @@ import socket
 from typing import Optional
 from collections import namedtuple
 from Generators import color_generator
-from Plotting import Plotter
+from Plotting import PeriodicPlotter
 from ProjectEnums import GraphPlot
+import threading
+import numpy as np
 
 SOCKET_ADDRESS = 'localhost'
 SOCKET_PORT = 7789
@@ -21,42 +23,59 @@ Point = namedtuple("Point", "x y")
 
 class SimpleServer:
     def __init__(self):
+        self.received_data = {}
         self.socket = socket.socket()
         self.socket.bind((SOCKET_ADDRESS, SOCKET_PORT))
-        self.socket.listen(5)
-        self.graph = Plotter()
+        self.socket.listen(10)
+        self.graph = PeriodicPlotter(self.received_data)
         self.color_generator = color_generator()
 
     def run(self) -> None:
+        socket_thread = threading.Thread(name='Socket_wait', target=self.socket_func)
+        print('Starting Socket_wait thread.')
+        socket_thread.start()
+
+        self.graph.cycle_display()
+
+    def socket_func(self) -> None:
         for color in self.color_generator:  # works as while loop, due to endless generator
             # accept connections from outside
             (client_socket, address) = self.socket.accept()
-            print(f'Client ID: {address}, color: {color}')
-            self.handle_client(client_socket, address[1], color)
+            client_thread = threading.Thread(name=address[1], target=self.handle_client, args=(client_socket, address[1], color))
+            print(f'Starting Client ID: {address}, color: {color} thread.')
+            client_thread.start()
 
-    def handle_client(self, client_sock, client_address: int, client_color: str) -> None:
+    def handle_client(self, client_sock: socket.socket, client_address: int, client_color: str) -> None:
         while True:
             try:
-                resquest_data, plot = self._listen_for_full_request(client_sock)
+                request_data, plot = self._listen_for_full_request(client_sock)
             except ConnectionResetError:
                 break
 
-            point = parse_data(resquest_data)
+            point = parse_data(request_data)
             if point:
                 client_sock.sendall(OK_MESSAGE)
-                self.graph.display_point(point.x, point.y, graph_id=client_address, graph_type=plot, graph_color=client_color)
+                self.add_point(client_address, point.x, point.y, plot, client_color)
             else:
                 client_sock.sendall(BAD_MESSAGE)
 
     @staticmethod
-    def _listen_for_full_request(client_sock) -> tuple[bytes, Optional[GraphPlot]]:
-        raw_response = client_sock.recv(4096)  # recv, for content length of bytes
+    def _listen_for_full_request(client_sock: socket.socket) -> tuple[bytes, Optional[GraphPlot]]:
+        raw_response = client_sock.recv(4096)
         if not raw_response:
             raise ConnectionResetError
         body, missing_bytes, plot_type = parse_response(raw_response)
         if missing_bytes:
             body += client_sock.recv(missing_bytes)
         return body, plot_type
+
+    def add_point(self, graph_id: int, x: float, y: float, graph_type: GraphPlot, graph_color: str):
+        graph_axes = self.received_data.get(graph_id)
+        if graph_axes:
+            graph_axes['x'] = np.append(graph_axes['x'], [x])
+            graph_axes['y'] = np.append(graph_axes['y'], [y])
+        else:
+            self.received_data[graph_id] = {'x': np.array([x]), 'y': np.array([y]), 'color': graph_color, 'type': graph_type}
 
 
 def parse_response(raw_data: bytes) -> tuple[bytes, int, Optional[GraphPlot]]:
