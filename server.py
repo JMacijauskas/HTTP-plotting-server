@@ -69,13 +69,20 @@ class SimpleServer:
             body += client_sock.recv(missing_bytes)
         return body, plot_type
 
-    def add_point(self, graph_id: int, x: float, y: float, graph_type: GraphPlot, graph_color: str):
+    def add_point(self, graph_id: int, x: float, y: float, graph_type: Optional[GraphPlot], graph_color: str):
+        if not graph_type:
+            graph_type = GraphPlot.plot
+
         graph_axes = self.received_data.get(graph_id)
         if graph_axes:
-            graph_axes['x'] = np.append(graph_axes['x'], [x])
-            graph_axes['y'] = np.append(graph_axes['y'], [y])
+            graph_data = graph_axes.get(graph_type.value)
+            if graph_data:
+                graph_data['x'] = np.append(graph_data['x'], [x])
+                graph_data['y'] = np.append(graph_data['y'], [y])
+            else:
+                graph_axes[graph_type.value] = {'x': np.array([x]), 'y': np.array([y])}
         else:
-            self.received_data[graph_id] = {'x': np.array([x]), 'y': np.array([y]), 'color': graph_color, 'type': graph_type}
+            self.received_data[graph_id] = {graph_type.value: {'x': np.array([x]), 'y': np.array([y])}, 'color': graph_color}
 
 
 def parse_response(raw_data: bytes) -> tuple[bytes, int, Optional[GraphPlot]]:

@@ -1,3 +1,5 @@
+from time import sleep
+import threading
 import requests
 from Generators import function_point_generator
 from ProjectEnums import GraphPlot
@@ -37,12 +39,29 @@ class Client:
     def send_point(self) -> None:
         if not self.generator_initialized:
             self.generator_initialized = self.generator(*self.generator_params)
-        print(self.single_connection.post(url=self.url, headers={'Graph-Type': self.plot_type.value}, data=self.generator_initialized.__next__()))
+        try:
+            print(self.single_connection.post(url=self.url, headers={'Graph-Type': self.plot_type.value}, data=self.generator_initialized.__next__()))
+        except StopIteration:
+            return
+
+    def send_points_threaded(self):
+        client_thread = threading.Thread(target=self.send_points)
+        client_thread.start()
 
 
 if __name__ == '__main__':
-    client1 = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-50, 50), lambda x: 2*x))
-    client2 = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-50, 50), lambda x: 2*x + 2))
-    for i in range(50):
-        client1.send_point()
-        client2.send_point()
+    client1 = Client('http://localhost:7789', GraphPlot.plot, function_point_generator, ((-10, 10), lambda x: 2*x))
+    client2 = Client('http://localhost:7789', GraphPlot.scatter, function_point_generator, ((-50, 50), lambda x: 2*x + 20))
+    client3 = Client('http://localhost:7789', GraphPlot.bar, function_point_generator, ((-100, 100), lambda x: 1 / (0.1 *x + 2.1)))
+    client4 = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-50, 50), lambda x: 2 * x ** 2))
+    # for i in range(200):
+    #     sleep(0.2)
+    #     client1.send_point()
+    #     client2.send_point()
+    #     client3.send_point()
+    #     client4.send_point()
+
+    client1.send_points_threaded()
+    client2.send_points_threaded()
+    client3.send_points_threaded()
+    client4.send_points_threaded()
