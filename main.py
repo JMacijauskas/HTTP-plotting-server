@@ -34,6 +34,7 @@ class Client:
 
     def send_points(self) -> None:
         for coordinate in self.generator(*self.generator_params):
+            sleep(0.1)
             print(self.single_connection.post(url=self.url, headers={'Graph-Type': self.plot_type.value}, data=coordinate))
 
     def send_point(self) -> None:
@@ -52,14 +53,8 @@ class Client:
 if __name__ == '__main__':
     client1 = Client('http://localhost:7789', GraphPlot.plot, function_point_generator, ((-10, 10), lambda x: 2*x))
     client2 = Client('http://localhost:7789', GraphPlot.scatter, function_point_generator, ((-50, 50), lambda x: 2*x + 20))
-    client3 = Client('http://localhost:7789', GraphPlot.bar, function_point_generator, ((-100, 100), lambda x: 1 / (0.1 *x + 2.1)))
+    client3 = Client('http://localhost:7789', GraphPlot.bar, function_point_generator, ((-100, 100), lambda x: 1 / (x + 2.1)))
     client4 = Client('http://localhost:7789', GraphPlot.stairs, function_point_generator, ((-50, 50), lambda x: 2 * x ** 2))
-    # for i in range(200):
-    #     sleep(0.2)
-    #     client1.send_point()
-    #     client2.send_point()
-    #     client3.send_point()
-    #     client4.send_point()
 
     client1.send_points_threaded()
     client2.send_points_threaded()

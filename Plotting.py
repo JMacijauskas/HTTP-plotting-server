@@ -69,7 +69,7 @@ class PeriodicPlotter:
             self.add_existing_plots()
 
             self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
+            self.fig.canvas.flush_events()  # flush only the ones that are updated
 
     def add_existing_plots(self):
         for unique_plot_data in self.axes.values():

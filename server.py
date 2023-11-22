@@ -35,7 +35,7 @@ class SimpleServer:
         print('Starting Socket_wait thread.')
         socket_thread.start()
 
-        self.graph.cycle_display()
+        self.graph.cycle_display()  # renew with plotter
 
     def socket_func(self) -> None:
         for color in self.color_generator:  # works as while loop, due to endless generator
@@ -69,7 +69,7 @@ class SimpleServer:
             body += client_sock.recv(missing_bytes)
         return body, plot_type
 
-    def add_point(self, graph_id: int, x: float, y: float, graph_type: Optional[GraphPlot], graph_color: str):
+    def add_point(self, graph_id: int, x: float, y: float, graph_type: Optional[GraphPlot], graph_color: str):  # move to plotter
         if not graph_type:
             graph_type = GraphPlot.plot
 
